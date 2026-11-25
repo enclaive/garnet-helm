@@ -1,0 +1,87 @@
+{{- if .Values.docling.enabled }}
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "open-webui.fullname" . }}-docling
+  namespace: {{ include "open-webui.namespace" . }}
+  labels:
+    {{- include "base.labels" . | nindent 4 }}
+    app.kubernetes.io/component: docling
+spec:
+  replicas: {{ .Values.docling.replicaCount | default 1 }}
+  selector:
+    matchLabels:
+      {{- include "base.selectorLabels" . | nindent 6 }}
+      app.kubernetes.io/component: docling
+  template:
+    metadata:
+      labels:
+        {{- include "base.labels" . | nindent 8 }}
+        {{- include "base.selectorLabels" . | nindent 8 }}
+        app.kubernetes.io/component: docling
+    spec:
+      {{- with .Values.docling.imagePullSecrets }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      containers:
+        - name: docling
+          image: "{{ .Values.docling.image.repository }}:{{ .Values.docling.image.tag }}"
+          imagePullPolicy: {{ .Values.docling.image.pullPolicy | default "Always" }}
+          ports:
+            - name: http
+              containerPort: {{ .Values.docling.service.containerPort | default 5001 }}
+              protocol: TCP
+          {{- with .Values.docling.startupProbe }}
+          startupProbe:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+          {{- with .Values.docling.livenessProbe }}
+          livenessProbe:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+          {{- with .Values.docling.readinessProbe }}
+          readinessProbe:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+          {{- with .Values.docling.resources }}
+          resources:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+          {{- with .Values.docling.extraEnvVars }}
+          env:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+      {{- with .Values.docling.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.docling.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.docling.affinity }}
+      affinity:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "open-webui.fullname" . }}-docling
+  namespace: {{ include "open-webui.namespace" . }}
+  labels:
+    {{- include "base.labels" . | nindent 4 }}
+    app.kubernetes.io/component: docling
+spec:
+  type: {{ .Values.docling.service.type | default "ClusterIP" }}
+  selector:
+    {{- include "base.selectorLabels" . | nindent 4 }}
+    app.kubernetes.io/component: docling
+  ports:
+    - name: http
+      port: {{ .Values.docling.service.port | default 5001 }}
+      targetPort: http
+      protocol: TCP
+{{- end }}
